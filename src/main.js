@@ -39,7 +39,7 @@ function collectState() {
 
 async function render(action) {
   let state = collectState() // состояние полей из таблицы
-  let query = {} // здесь будут формироваться параметры запроса
+  let query = { ...state } // здесь будут формироваться параметры запроса
   // другие apply*
 
   query = applySearching(query, state, action)
@@ -96,7 +96,7 @@ appRoot.appendChild(sampleTable.container)
 async function init() {
   const indexes = await api.getIndexes()
 
-  updateIndexes(sampleTable, filter.elements, {
+  updateIndexes(sampleTable.filter.elements, {
     searchBySeller: indexes.sellers,
   })
 }
