@@ -1,0 +1,15 @@
+let getArea = (radius) => {
+  if (radius > 0.0) {
+    // правильный случай
+    return new Promise((rs) => rs(Math.pow(radius, 2) * Math.PI))
+  } else if (radius < 0) {
+    // ошибочный случай
+    return Promise.reject('radius должен быть больше 0')
+  } else {
+    return Promise.resolve(0)
+  }
+}
+
+// Promise.allSettled(
+//   [-1, 0, 1, 3, 5, 7, 13].map((radius) => getArea(radius))
+// ).then((radiusList) => console.log(radiusList))

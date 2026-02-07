@@ -14,8 +14,7 @@ import { initSearching } from './components/searching.js'
 // @todo: подключение
 
 // Исходные данные используемые в render()
-const { data, ...indexes } = initData(sourceData)
-
+const api = initData(sourceData)
 /**
  * Сбор и обработка полей из таблицы
  * @returns {Object}
@@ -37,29 +36,21 @@ function collectState() {
  * Перерисовка состояния таблицы при любых изменениях
  * @param {HTMLButtonElement?} action
  */
-// function render(action) {
-//   let state = collectState() // состояние полей из таблицы
-//   let result = [...data] // копируем для последующего изменения
-//   // @todo: использование
-//   result = applyPagination(result, state, action)
 
-//   sampleTable.render(result)
-// }
+async function render(action) {
+  let state = collectState() // состояние полей из таблицы
+  let query = {} // здесь будут формироваться параметры запроса
+  // другие apply*
 
-function render(action) {
-  const state = collectState() // состояние полей из таблицы
-  let result = [...data] // копируем для последующего изменения
-  // @todo: использование
-  // 1. Поиск
-  result = applySearching(result, state, action)
-  // 2. Фильтрация
-  result = applyFiltering(result, state, action)
-  // 3. Сортировка
-  result = applySorting(result, state, action)
-  // 4. Пагинация
-  result = applyPagination(result, state, action)
-  // 5. Отрисовка
-  sampleTable.render(result)
+  query = applySearching(query, state, action)
+  query = applyFiltering(query, state, action)
+  query = applySorting(query, state, action)
+  query = applyPagination(query, state, action) // обновляем query
+
+  const { total, items } = await api.getRecords(query)
+
+  updatePagination(total, query)
+  sampleTable.render(items)
 }
 
 const sampleTable = initTable(
@@ -73,12 +64,18 @@ const sampleTable = initTable(
 )
 
 // @todo: инициализация
+const applySearching = initSearching('search')
+const { applyFiltering, updateIndexes } = initFiltering(
+  sampleTable.filter.elements
+)
+
 const applySorting = initSorting([
+  // Нам нужно передать сюда массив элементов, которые вызывают сортировку, чтобы изменять их визуальное представление
   sampleTable.header.elements.sortByDate,
   sampleTable.header.elements.sortByTotal,
 ])
 
-const applyPagination = initPagination(
+const { applyPagination, updatePagination } = initPagination(
   sampleTable.pagination.elements, // элементы пагинации из шаблона
   (el, page, isCurrent) => {
     // колбэк настройки кнопки страницы
@@ -93,13 +90,15 @@ const applyPagination = initPagination(
   }
 )
 
-const applyFiltering = initFiltering(sampleTable.filter.elements, {
-  // передаём элементы фильтра
-  searchBySeller: indexes.sellers, // для элемента с именем searchBySeller устанавливаем массив продавцов
-})
-const applySearching = initSearching('search')
-
 const appRoot = document.querySelector('#app')
 appRoot.appendChild(sampleTable.container)
 
-render()
+async function init() {
+  const indexes = await api.getIndexes()
+
+  updateIndexes(sampleTable, filter.elements, {
+    searchBySeller: indexes.sellers,
+  })
+}
+// render()
+init().then(render)
